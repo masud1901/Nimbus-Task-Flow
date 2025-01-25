@@ -1,0 +1,189 @@
+Here's a **non-technical, step-by-step blueprint** of what needs to be done and where, using Firebase services:
+
+---
+
+### **1. Firebase Project Setup** 🔧
+**Where:** [Firebase Console](https://console.firebase.google.com/)
+- Create new project "TaskFlow"
+- Enable **Firestore Database** (NoSQL)
+- Enable **Authentication** (Email/Password + Google)
+- Enable **Hosting**
+- Register app domain (e.g., `taskflow.web.app`)
+
+---
+
+### **2. Database Structure** 🗄️
+**Where:** Firestore Database
+- **Collection: Users**
+  - Document ID = User ID
+  - Fields: `email`, `displayName`, `projects[]` (array of project IDs)
+  
+- **Collection: Projects**
+  - Document ID = Auto-generated
+  - Fields:
+    - `name` (string)
+    - `owner` (user ID reference)
+    - `members[]` (array of user IDs)
+    - `tasks[]` (array of objects: `{text, completed, createdBy}`)
+    - `peakHours` (array of numbers, e.g., [9, 13, 18])
+    - `lastReminded` (timestamp)
+
+- **Collection: Presence** (optional)
+  - Document ID = Project ID
+  - Fields: `usersOnline{}` (map of user IDs → last active timestamp)
+
+---
+
+### **3. Security Rules** 🔐
+**Where:** Firestore Rules Tab
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can only edit their own profile
+    match /users/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // Project access control
+    match /projects/{projectId} {
+      allow read: if request.auth.uid in resource.data.members;
+      allow create: if request.auth.uid != null;
+      allow update, delete: if request.auth.uid == resource.data.owner;
+    }
+    
+    // Presence tracking (public read/write)
+    match /presence/{projectId} {
+      allow read, write: if true;
+    }
+  }
+}
+```
+
+---
+
+### **4. Authentication Flow** 🔑
+**Where:** Frontend UI + Firebase Auth
+1. **Signup/Login Page**
+   - Email/password form
+   - "Continue with Google" button
+   - Error handling for duplicate emails
+
+2. **User Session**
+   - Auto-login returning users
+   - Store user ID in frontend state
+
+3. **Project Access Check**
+   - Redirect unauthorized users trying to access projects
+
+---
+
+### **5. Core Features Implementation** 🎯
+
+**A. Project Creation**  
+**Where:** Frontend "New Project" Form
+1. User enters project name
+2. Firebase creates new project document:
+   - Auto-generate ID
+   - Set owner = current user ID
+   - Add user to members array
+3. Update user's `projects[]` array
+
+**B. Sharing Projects**  
+**Where:** Project Settings Page
+1. "Add Member" button → email input
+2. Firebase:
+   - Lookup user by email
+   - Add their ID to project's `members[]`
+   - Add project ID to their `projects[]`
+3. Generate shareable link: `app.com/projects/{projectId}`
+
+**C. Real-Time Collaboration**  
+**Where:** Project Page
+1. **Data Sync**  
+   - Attach Firestore listener to project document
+   - Auto-update UI when tasks/members change
+
+2. **Presence Detection**  
+   - Write to `presence/{projectId}` when user opens project
+   - Update timestamp every 15 seconds
+   - Show avatars of users with recent timestamps
+
+**D. Peak-Time Reminders**  
+**Where:** Cloud Functions + Frontend
+1. **Scheduled Check** (Backend)
+   - Cloud Function runs every 30 minutes
+   - Check if current hour matches any project's `peakHours`
+   - For matching projects:
+     - Update `lastReminded` timestamp
+     - Send FCM push notifications to members
+
+2. **Visual Pulse** (Frontend)
+   - Compare current time with project's `peakHours`
+   - Add glowing border animation when matched
+
+---
+
+### **6. Notification System** 🔔
+**Where:** Firebase Cloud Messaging (FCM)
+1. **Frontend**  
+   - Request notification permissions
+   - Store FCM token in user document
+
+2. **Backend** (Cloud Functions)
+   - Send notifications when:
+     - Added to new project
+     - Task assigned to you
+     - Peak-hour reminder triggers
+
+---
+
+### **7. Hosting & Deployment** 🚀
+**Where:** Firebase Hosting
+1. Build static files (HTML/CSS/JS)
+2. Configure `firebase.json`:
+   - Redirect all routes to `index.html`
+   - Cache settings for PWA
+3. Deploy with CLI:
+   ```bash
+   firebase deploy --only hosting
+   ```
+
+---
+
+### **8. Maintenance Tasks** 🛠️
+1. **Backups**  
+   - Enable Firestore daily exports to Cloud Storage
+
+2. **Monitoring**  
+   - Set up Firebase Alerts for:
+     - Failed logins
+     - Database quota limits
+     - Function errors
+
+3. **Scaling Prep**  
+   - Create indexes for common queries
+   - Archive old projects after 6 months
+
+---
+
+### **Workflow Summary**  
+1. **Frontend** (User's Browser)
+   - UI components
+   - Firestore data binding
+   - Auth state management
+
+2. **Backend** (Firebase Services)
+   - Database: Firestore
+   - Auth: Firebase Authentication
+   - Logic: Cloud Functions
+   - Notifications: FCM
+
+3. **DevOps** (Your Machine)
+   - Local testing with Emulator Suite
+   - Deployment via Firebase CLI
+   - Security rule updates
+
+---
+
+This blueprint gives you a roadmap without code specifics. Would you like me to prioritize any section or explain the implementation strategy for a particular feature?
