@@ -1,8 +1,7 @@
 import { Drawer, List, ListItem, ListItemIcon, ListItemText, Box } from '@mui/material';
 import { 
   Dashboard as DashboardIcon,
-  Task as TaskIcon,
-  CalendarToday as CalendarIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,8 +15,7 @@ export function Sidebar({ open, width }: SidebarProps) {
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'Tasks', icon: <TaskIcon />, path: '/tasks' },
-    { text: 'Calendar', icon: <CalendarIcon />, path: '/calendar' },
+    { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
   ];
 
   return (
@@ -41,13 +39,13 @@ export function Sidebar({ open, width }: SidebarProps) {
         <List>
           {menuItems.map((item) => (
             <ListItem
-              button
               key={item.text}
               onClick={() => navigate(item.path)}
               sx={{
                 my: 0.5,
                 mx: 1,
                 borderRadius: 1,
+                cursor: 'pointer',
                 '&:hover': {
                   backgroundColor: 'rgba(122, 162, 247, 0.1)',
                 },

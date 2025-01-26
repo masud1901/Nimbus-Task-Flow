@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -14,7 +14,6 @@ import {
   Switch,
   Box
 } from '@mui/material';
-import { DateTimePicker } from '@mui/x-date-pickers';
 import { useStore } from '@stores/useStore';
 import { useAuth } from '@contexts/auth/AuthContext';
 
@@ -27,11 +26,11 @@ interface TaskFormProps {
 export function TaskForm({ open, onClose, projectId }: TaskFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const { user } = useAuth();
-  const { createTask } = useStore();
+  const { createTask, fetchTasks } = useStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,23 +41,51 @@ export function TaskForm({ open, onClose, projectId }: TaskFormProps) {
         projectId,
         title,
         description,
-        dueDate: dueDate?.toISOString(),
+        dueDate: dueDate || undefined,
         priority,
         remindersEnabled,
         createdBy: user.id
       });
-      onClose();
+      
       setTitle('');
       setDescription('');
-      setDueDate(null);
+      setDueDate('');
       setPriority('medium');
+      setRemindersEnabled(true);
+      
+      await fetchTasks(projectId);
+      onClose();
     } catch (error) {
       console.error('Failed to create task:', error);
     }
   };
 
+  useEffect(() => {
+    if (open) {
+      setTitle('');
+      setDescription('');
+      setDueDate('');
+      setPriority('medium');
+      setRemindersEnabled(true);
+    }
+  }, [open]);
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="sm" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: '#1a1b26',
+          color: '#c0caf5',
+          '& .MuiDialogTitle-root': {
+            color: '#7aa2f7',
+          },
+        }
+      }}
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Add New Task</DialogTitle>
         <DialogContent>
@@ -70,6 +97,20 @@ export function TaskForm({ open, onClose, projectId }: TaskFormProps) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                color: '#c0caf5',
+                '& fieldset': {
+                  borderColor: '#414868',
+                },
+                '&:hover fieldset': {
+                  borderColor: '#7aa2f7',
+                },
+              },
+              '& .MuiInputLabel-root': {
+                color: '#7aa2f7',
+              },
+            }}
           />
           <TextField
             margin="dense"
@@ -80,13 +121,17 @@ export function TaskForm({ open, onClose, projectId }: TaskFormProps) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
-          <Box sx={{ mt: 2 }}>
-            <DateTimePicker
-              label="Due Date"
-              value={dueDate}
-              onChange={(newValue) => setDueDate(newValue)}
-            />
-          </Box>
+          <TextField
+            margin="dense"
+            label="Due Date"
+            type="datetime-local"
+            fullWidth
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            InputLabelProps={{
+              shrink: true,
+            }}
+          />
           <FormControl fullWidth margin="dense">
             <InputLabel>Priority</InputLabel>
             <Select
@@ -110,8 +155,24 @@ export function TaskForm({ open, onClose, projectId }: TaskFormProps) {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="contained">Add Task</Button>
+          <Button 
+            onClick={onClose}
+            sx={{ color: '#7aa2f7' }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            variant="contained"
+            sx={{
+              bgcolor: '#7aa2f7',
+              '&:hover': {
+                bgcolor: '#5d87e6',
+              },
+            }}
+          >
+            Add Task
+          </Button>
         </DialogActions>
       </form>
     </Dialog>

@@ -6,7 +6,6 @@ import {
   DialogActions,
   TextField,
   Button,
-  Alert
 } from '@mui/material';
 import { useStore } from '@stores/useStore';
 import { useAuth } from '@contexts/auth/AuthContext';
@@ -19,19 +18,19 @@ interface CreateProjectDialogProps {
 export function CreateProjectDialog({ open, onClose }: CreateProjectDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [error, setError] = useState('');
-  const { createProject } = useStore();
   const { user } = useAuth();
+  const { createProject, fetchProjects } = useStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await createProject(name, description, user?.id);
+      await fetchProjects();
+      onClose();
       setName('');
       setDescription('');
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create project');
+    } catch (error) {
+      console.error('Failed to create project:', error);
     }
   };
 
@@ -40,7 +39,6 @@ export function CreateProjectDialog({ open, onClose }: CreateProjectDialogProps)
       <form onSubmit={handleSubmit}>
         <DialogTitle>Create New Project</DialogTitle>
         <DialogContent>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <TextField
             autoFocus
             margin="dense"
@@ -49,6 +47,7 @@ export function CreateProjectDialog({ open, onClose }: CreateProjectDialogProps)
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
+            sx={{ mb: 2 }}
           />
           <TextField
             margin="dense"

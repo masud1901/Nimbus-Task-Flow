@@ -1,19 +1,18 @@
 export interface Profile {
   id: string;
   email: string;
-  full_name: string | null;
-  avatar_url: string | null;
+  full_name?: string;
+  avatar_url?: string;
   preferences: {
     darkMode: boolean;
     notifications: boolean;
   };
-  created_at: string;
 }
 
 export interface Project {
   id: string;
   name: string;
-  description: string | null;
+  description?: string;
   owner_id: string;
   created_at: string;
 }
@@ -22,10 +21,21 @@ export interface Task {
   id: string;
   project_id: string;
   title: string;
-  description: string | null;
-  status: 'pending' | 'in_progress' | 'completed' | 'archived';
-  assigned_to: string | null;
+  description?: string;
+  completed: boolean;
+  due_date?: string;
+  priority: 'low' | 'medium' | 'high';
+  reminder_enabled: boolean;
   created_by: string;
   created_at: string;
-  due_date: string | null;
+}
+
+export interface TodoItem {
+  id: string;
+  task_id: string;
+  content: string;
+  completed: boolean;
+  priority: 'low' | 'medium' | 'high';
+  order_index: number;
+  created_at: string;
 } 
